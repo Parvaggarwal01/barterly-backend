@@ -1,9 +1,10 @@
 import dotenv from "dotenv";
+
+// Load environment variables FIRST (before other imports)
+dotenv.config();
+
 import app from "./src/app.js";
 import connectDB from "./src/config/db.js";
-
-// Load environment variables
-dotenv.config();
 
 // Connect to database
 connectDB();

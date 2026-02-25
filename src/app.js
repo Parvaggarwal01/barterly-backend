@@ -5,8 +5,15 @@ import hpp from "hpp";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 
+// Import models (register with Mongoose early)
+import "./models/User.model.js";
+import "./models/Category.model.js";
+import "./models/Skill.model.js";
+import "./models/Review.model.js";
+
 // Import routes
 import authRoutes from "./routes/auth.routes.js";
+import userRoutes from "./routes/user.routes.js";
 
 // Import middlewares
 import {
@@ -90,6 +97,7 @@ app.get("/health", (req, res) => {
 
 // API routes
 app.use("/api/auth", authLimiter, authRoutes);
+app.use("/api/users", userRoutes);
 
 // Apply general rate limiter to all other API routes
 app.use("/api", apiLimiter);
