@@ -14,6 +14,8 @@ import "./models/Review.model.js";
 // Import routes
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import skillRoutes from "./routes/skill.routes.js";
+import categoryRoutes from "./routes/category.routes.js";
 
 // Import middlewares
 import {
@@ -98,6 +100,8 @@ app.get("/health", (req, res) => {
 // API routes
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/skills", skillRoutes);
+app.use("/api/categories", categoryRoutes);
 
 // Apply general rate limiter to all other API routes
 app.use("/api", apiLimiter);
