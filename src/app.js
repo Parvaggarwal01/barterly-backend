@@ -11,6 +11,7 @@ import "./models/Skill.model.js";
 import "./models/Review.model.js";
 import "./models/BarterRequest.model.js";
 import "./models/Bookmark.model.js";
+import "./models/Report.model.js";
 
 // Import routes
 import authRoutes from "./routes/auth.routes.js";
@@ -20,6 +21,7 @@ import categoryRoutes from "./routes/category.routes.js";
 import barterRoutes from "./routes/barter.routes.js";
 import reviewRoutes from "./routes/review.routes.js";
 import bookmarkRoutes from "./routes/bookmark.routes.js";
+import reportRoutes from "./routes/report.routes.js";
 
 // Import middlewares
 import {
@@ -91,6 +93,7 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/barters", barterRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/bookmarks", bookmarkRoutes);
+app.use("/api/reports", reportRoutes);
 
 // ============ ERROR HANDLING ============
 
