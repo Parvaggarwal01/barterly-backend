@@ -3,8 +3,10 @@ import dotenv from "dotenv";
 // Load environment variables FIRST (before other imports)
 dotenv.config();
 
+import http from "http";
 import app from "./src/app.js";
 import connectDB from "./src/config/db.js";
+import { initializeSocket } from "./src/config/socket.js";
 
 // Connect to database
 connectDB();
@@ -12,7 +14,12 @@ connectDB();
 // Start server
 const PORT = process.env.PORT || 5000;
 
-const server = app.listen(PORT, () => {
+const httpServer = http.createServer(app);
+
+// Initialize Socket.io on the generic active HTTP server wrapper
+initializeSocket(httpServer);
+
+const server = httpServer.listen(PORT, () => {
   console.log(
     `🚀 Server running in ${process.env.NODE_ENV || "development"} mode on port ${PORT}`,
   );
