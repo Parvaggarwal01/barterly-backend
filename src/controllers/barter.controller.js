@@ -6,10 +6,12 @@ import { successResponse } from "../utils/apiResponse.utils.js";
  * POST /api/barters
  */
 export const createBarterRequest = async (req, res, next) => {
+  console.log("🎯 Controller reached");
+  console.log("🎯 next is a function?", typeof next === "function");
   try {
     const barter = await barterService.createBarterRequest(
       req.body,
-      req.user._id,
+      req.user._id.toString(),
     );
 
     return successResponse(
@@ -19,6 +21,7 @@ export const createBarterRequest = async (req, res, next) => {
       barter,
     );
   } catch (error) {
+    console.log("❌ Controller error:", error.message);
     next(error);
   }
 };
@@ -180,7 +183,12 @@ export const getBarterStats = async (req, res, next) => {
   try {
     const stats = await barterService.getBarterStats(req.user._id);
 
-    return successResponse(res, 200, "Statistics retrieved successfully", stats);
+    return successResponse(
+      res,
+      200,
+      "Statistics retrieved successfully",
+      stats,
+    );
   } catch (error) {
     next(error);
   }

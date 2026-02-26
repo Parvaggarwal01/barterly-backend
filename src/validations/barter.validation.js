@@ -6,11 +6,9 @@ import mongoose from "mongoose";
  */
 const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
 
-const objectIdValidation = z
-  .string()
-  .refine((val) => isValidObjectId(val), {
-    message: "Invalid ObjectId format",
-  });
+const objectIdValidation = z.string().refine((val) => isValidObjectId(val), {
+  message: "Invalid ObjectId format",
+});
 
 /**
  * Create barter request validation schema
@@ -22,8 +20,6 @@ export const createBarterRequestSchema = z.object({
     requestedSkillId: objectIdValidation,
     message: z
       .string()
-      .trim()
-      .min(10, "Message must be at least 10 characters")
       .max(500, "Message cannot exceed 500 characters")
       .optional(),
   }),
@@ -65,7 +61,14 @@ export const rejectBarterSchema = z.object({
 export const getBartersQuerySchema = z.object({
   query: z.object({
     status: z
-      .enum(["pending", "accepted", "rejected", "cancelled", "completed", "all"])
+      .enum([
+        "pending",
+        "accepted",
+        "rejected",
+        "cancelled",
+        "completed",
+        "all",
+      ])
       .optional(),
     type: z.enum(["sent", "received", "all"]).optional().default("all"),
     page: z
