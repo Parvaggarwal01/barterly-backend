@@ -10,10 +10,14 @@ import { AppError } from "../utils/apiResponse.utils.js";
  * @returns {Object} Created barter request
  */
 export const createBarterRequest = async (barterData, senderId) => {
+  console.log("🔧 Service function reached");
+  console.log("🔧 barterData:", JSON.stringify(barterData, null, 2));
+  console.log("🔧 senderId:", senderId.toString());
+
   const { receiverId, offeredSkillId, requestedSkillId, message } = barterData;
 
   // Validate sender is not the same as receiver
-  if (senderId === receiverId) {
+  if (senderId.toString() === receiverId.toString()) {
     throw new AppError("You cannot send a barter request to yourself", 400);
   }
 
@@ -28,7 +32,7 @@ export const createBarterRequest = async (barterData, senderId) => {
   if (!offeredSkill || !offeredSkill.isActive) {
     throw new AppError("Offered skill not found or inactive", 404);
   }
-  if (offeredSkill.offeredBy.toString() !== senderId) {
+  if (offeredSkill.offeredBy.toString() !== senderId.toString()) {
     throw new AppError("You can only offer your own skills", 403);
   }
 
@@ -37,8 +41,11 @@ export const createBarterRequest = async (barterData, senderId) => {
   if (!requestedSkill || !requestedSkill.isActive) {
     throw new AppError("Requested skill not found or inactive", 404);
   }
-  if (requestedSkill.offeredBy.toString() !== receiverId) {
-    throw new AppError("The requested skill does not belong to the receiver", 400);
+  if (requestedSkill.offeredBy.toString() !== receiverId.toString()) {
+    throw new AppError(
+      "The requested skill does not belong to the receiver",
+      400,
+    );
   }
 
   // Check for duplicate pending requests
@@ -51,7 +58,10 @@ export const createBarterRequest = async (barterData, senderId) => {
   });
 
   if (existingRequest) {
-    throw new AppError("You already have a pending request for this skill exchange", 400);
+    throw new AppError(
+      "You already have a pending request for this skill exchange",
+      400,
+    );
   }
 
   // Create barter request
@@ -67,8 +77,14 @@ export const createBarterRequest = async (barterData, senderId) => {
   await barterRequest.populate([
     { path: "sender", select: "name email avatar location averageRating" },
     { path: "receiver", select: "name email avatar location averageRating" },
-    { path: "offeredSkill", select: "title description category level deliveryMode" },
-    { path: "requestedSkill", select: "title description category level deliveryMode" },
+    {
+      path: "offeredSkill",
+      select: "title description category level deliveryMode",
+    },
+    {
+      path: "requestedSkill",
+      select: "title description category level deliveryMode",
+    },
   ]);
 
   return barterRequest;
@@ -116,7 +132,10 @@ export const getMyBarters = async (userId, filters = {}, options = {}) => {
       .populate("sender", "name email avatar location averageRating")
       .populate("receiver", "name email avatar location averageRating")
       .populate("offeredSkill", "title description category level deliveryMode")
-      .populate("requestedSkill", "title description category level deliveryMode")
+      .populate(
+        "requestedSkill",
+        "title description category level deliveryMode",
+      )
       .populate("counterOffer.offeredSkill", "title description category level")
       .sort(sortOptions)
       .skip(skip)
@@ -157,10 +176,13 @@ export const getBarterById = async (barterId, userId) => {
 
   // Check if user is part of this barter
   if (
-    barter.sender._id.toString() !== userId &&
-    barter.receiver._id.toString() !== userId
+    barter.sender._id.toString() !== userId.toString() &&
+    barter.receiver._id.toString() !== userId.toString()
   ) {
-    throw new AppError("You are not authorized to view this barter request", 403);
+    throw new AppError(
+      "You are not authorized to view this barter request",
+      403,
+    );
   }
 
   return barter;
@@ -180,7 +202,7 @@ export const acceptBarter = async (barterId, userId) => {
   }
 
   // Only receiver can accept
-  if (barter.receiver.toString() !== userId) {
+  if (barter.receiver.toString() !== userId.toString()) {
     throw new AppError("Only the receiver can accept this request", 403);
   }
 
@@ -219,7 +241,7 @@ export const rejectBarter = async (barterId, userId, reason) => {
   }
 
   // Only receiver can reject
-  if (barter.receiver.toString() !== userId) {
+  if (barter.receiver.toString() !== userId.toString()) {
     throw new AppError("Only the receiver can reject this request", 403);
   }
 
@@ -261,7 +283,7 @@ export const counterOffer = async (barterId, userId, counterData) => {
   }
 
   // Only receiver can counter
-  if (barter.receiver.toString() !== userId) {
+  if (barter.receiver.toString() !== userId.toString()) {
     throw new AppError("Only the receiver can make a counter offer", 403);
   }
 
@@ -275,7 +297,7 @@ export const counterOffer = async (barterId, userId, counterData) => {
   if (!counterSkill || !counterSkill.isActive) {
     throw new AppError("Counter offered skill not found or inactive", 404);
   }
-  if (counterSkill.offeredBy.toString() !== userId) {
+  if (counterSkill.offeredBy.toString() !== userId.toString()) {
     throw new AppError("You can only offer your own skills in counter", 403);
   }
 
@@ -293,7 +315,10 @@ export const counterOffer = async (barterId, userId, counterData) => {
     { path: "receiver", select: "name email avatar" },
     { path: "offeredSkill", select: "title description" },
     { path: "requestedSkill", select: "title description" },
-    { path: "counterOffer.offeredSkill", select: "title description category level" },
+    {
+      path: "counterOffer.offeredSkill",
+      select: "title description category level",
+    },
   ]);
 
   return barter;
@@ -313,7 +338,7 @@ export const cancelBarter = async (barterId, userId) => {
   }
 
   // Only sender can cancel
-  if (barter.sender.toString() !== userId) {
+  if (barter.sender.toString() !== userId.toString()) {
     throw new AppError("Only the sender can cancel this request", 403);
   }
 
@@ -349,8 +374,8 @@ export const completeBarter = async (barterId, userId) => {
   }
 
   // Must be sender or receiver
-  const isSender = barter.sender.toString() === userId;
-  const isReceiver = barter.receiver.toString() === userId;
+  const isSender = barter.sender.toString() === userId.toString();
+  const isReceiver = barter.receiver.toString() === userId.toString();
 
   if (!isSender && !isReceiver) {
     throw new AppError("You are not authorized to complete this barter", 403);

@@ -7,6 +7,8 @@ import { errorResponse } from "../utils/apiResponse.utils.js";
  */
 export const validate = (schema) => {
   return async (req, res, next) => {
+    // console.log("🔍 Validate middleware started");
+    // console.log("🔍 next is a function?", typeof next === "function");
     try {
       await schema.parseAsync({
         body: req.body,
@@ -14,8 +16,10 @@ export const validate = (schema) => {
         params: req.params,
         cookies: req.cookies,
       });
+      // console.log("✅ Validation passed, calling next()");
       next();
     } catch (error) {
+      // console.log("❌ Validation error caught:", error.message);
       if (error instanceof ZodError) {
         const errors = error.errors.map((err) => ({
           field: err.path.join("."),

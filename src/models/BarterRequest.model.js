@@ -78,11 +78,9 @@ barterRequestSchema.index({ receiver: 1, status: 1 });
 barterRequestSchema.index({ createdAt: -1 });
 
 // Validation: Sender cannot be the same as receiver
-barterRequestSchema.pre("save", function (next) {
+barterRequestSchema.pre("save", async function () {
   if (this.sender.toString() === this.receiver.toString()) {
-    next(new Error("Cannot send barter request to yourself"));
-  } else {
-    next();
+    throw new Error("Cannot send barter request to yourself");
   }
 });
 
