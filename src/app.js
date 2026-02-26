@@ -2,7 +2,6 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import hpp from "hpp";
-import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 
 // Import models (register with Mongoose early)
@@ -10,12 +9,14 @@ import "./models/User.model.js";
 import "./models/Category.model.js";
 import "./models/Skill.model.js";
 import "./models/Review.model.js";
+import "./models/BarterRequest.model.js";
 
 // Import routes
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import skillRoutes from "./routes/skill.routes.js";
 import categoryRoutes from "./routes/category.routes.js";
+import barterRoutes from "./routes/barter.routes.js";
 
 // Import middlewares
 import {
@@ -54,24 +55,6 @@ app.use(
   }),
 );
 
-// Rate limiting for auth routes
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // 10 requests per window
-  message: "Too many requests from this IP, please try again later.",
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// Rate limiting for general API routes
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests per window
-  message: "Too many requests from this IP, please try again later.",
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
 // Body parser
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
@@ -98,13 +81,11 @@ app.get("/health", (req, res) => {
 });
 
 // API routes
-app.use("/api/auth", authLimiter, authRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/skills", skillRoutes);
 app.use("/api/categories", categoryRoutes);
-
-// Apply general rate limiter to all other API routes
-app.use("/api", apiLimiter);
+app.use("/api/barters", barterRoutes);
 
 // ============ ERROR HANDLING ============
 

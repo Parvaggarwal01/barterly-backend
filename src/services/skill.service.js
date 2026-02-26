@@ -1,7 +1,7 @@
 import Skill from "../models/Skill.model.js";
 import User from "../models/User.model.js";
 import Category from "../models/Category.model.js";
-import AppError from "../utils/appError.utils.js";
+import { AppError } from "../utils/apiResponse.utils.js";
 
 /**
  * Create a new skill
@@ -53,7 +53,6 @@ export const getAllSkills = async (filters = {}, options = {}) => {
   // Build query
   const query = { isActive: true };
 
-  // Only show approved skills for non-admin users
   if (!filters.showPending) {
     query.verificationStatus = "approved";
   }

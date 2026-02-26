@@ -1,5 +1,5 @@
 import Category from "../models/Category.model.js";
-import AppError from "../utils/appError.utils.js";
+import { AppError } from "../utils/apiResponse.utils.js";
 
 /**
  * Create a new category

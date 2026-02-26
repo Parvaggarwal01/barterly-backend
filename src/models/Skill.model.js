@@ -84,6 +84,17 @@ const skillSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    learningOutcomes: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+    prerequisites: {
+      type: String,
+      trim: true,
+      maxlength: [500, "Prerequisites cannot exceed 500 characters"],
+    },
     savedCount: {
       type: Number,
       default: 0,

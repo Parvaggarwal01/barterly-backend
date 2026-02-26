@@ -1,6 +1,6 @@
 import express from "express";
 import * as skillController from "../controllers/skill.controller.js";
-import { protect } from "../middlewares/auth.middleware.js";
+import { authenticate } from "../middlewares/auth.middleware.js";
 import { authorize } from "../middlewares/role.middleware.js";
 
 const router = express.Router();
@@ -11,7 +11,7 @@ router.get("/:id", skillController.getSkillById);
 router.get("/user/:userId", skillController.getUserSkills);
 
 // Protected routes (require authentication)
-router.use(protect);
+router.use(authenticate);
 
 router.post("/", skillController.createSkill);
 router.get("/my/list", skillController.getMySkills);
