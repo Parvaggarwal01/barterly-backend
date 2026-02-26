@@ -44,6 +44,7 @@ const allowedOrigins = [
   process.env.FRONTEND_URL || "http://localhost:5173",
   "http://localhost:5173",
   "http://localhost:3000",
+  "https://white-mushroom-0e2ffb300.5.azurestaticapps.net", // Add potential azure static web apps domains if known, or just rely on FRONTEND_URL
 ];
 
 app.use(
@@ -52,7 +53,11 @@ app.use(
       // Allow requests with no origin (like mobile apps or curl)
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin)) {
+      // In production/Azure we want to be permissive if FRONTEND_URL isn't perfectly matched during setup
+      // A more robust approach checks if origin is in the allowed list, OR if it's a completely open environment variable
+      if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== "production") {
+        callback(null, true);
+      } else if (process.env.ALLOW_ALL_CORS === 'true') {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
