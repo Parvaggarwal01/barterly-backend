@@ -180,7 +180,12 @@ export const getBarterStats = async (req, res, next) => {
   try {
     const stats = await barterService.getBarterStats(req.user._id);
 
-    return successResponse(res, 200, "Statistics retrieved successfully", stats);
+    return successResponse(
+      res,
+      200,
+      "Statistics retrieved successfully",
+      stats,
+    );
   } catch (error) {
     next(error);
   }

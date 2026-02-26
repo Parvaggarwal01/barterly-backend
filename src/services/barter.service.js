@@ -38,7 +38,10 @@ export const createBarterRequest = async (barterData, senderId) => {
     throw new AppError("Requested skill not found or inactive", 404);
   }
   if (requestedSkill.offeredBy.toString() !== receiverId) {
-    throw new AppError("The requested skill does not belong to the receiver", 400);
+    throw new AppError(
+      "The requested skill does not belong to the receiver",
+      400,
+    );
   }
 
   // Check for duplicate pending requests
@@ -51,7 +54,10 @@ export const createBarterRequest = async (barterData, senderId) => {
   });
 
   if (existingRequest) {
-    throw new AppError("You already have a pending request for this skill exchange", 400);
+    throw new AppError(
+      "You already have a pending request for this skill exchange",
+      400,
+    );
   }
 
   // Create barter request
@@ -67,8 +73,14 @@ export const createBarterRequest = async (barterData, senderId) => {
   await barterRequest.populate([
     { path: "sender", select: "name email avatar location averageRating" },
     { path: "receiver", select: "name email avatar location averageRating" },
-    { path: "offeredSkill", select: "title description category level deliveryMode" },
-    { path: "requestedSkill", select: "title description category level deliveryMode" },
+    {
+      path: "offeredSkill",
+      select: "title description category level deliveryMode",
+    },
+    {
+      path: "requestedSkill",
+      select: "title description category level deliveryMode",
+    },
   ]);
 
   return barterRequest;
@@ -116,7 +128,10 @@ export const getMyBarters = async (userId, filters = {}, options = {}) => {
       .populate("sender", "name email avatar location averageRating")
       .populate("receiver", "name email avatar location averageRating")
       .populate("offeredSkill", "title description category level deliveryMode")
-      .populate("requestedSkill", "title description category level deliveryMode")
+      .populate(
+        "requestedSkill",
+        "title description category level deliveryMode",
+      )
       .populate("counterOffer.offeredSkill", "title description category level")
       .sort(sortOptions)
       .skip(skip)
@@ -160,7 +175,10 @@ export const getBarterById = async (barterId, userId) => {
     barter.sender._id.toString() !== userId &&
     barter.receiver._id.toString() !== userId
   ) {
-    throw new AppError("You are not authorized to view this barter request", 403);
+    throw new AppError(
+      "You are not authorized to view this barter request",
+      403,
+    );
   }
 
   return barter;
@@ -293,7 +311,10 @@ export const counterOffer = async (barterId, userId, counterData) => {
     { path: "receiver", select: "name email avatar" },
     { path: "offeredSkill", select: "title description" },
     { path: "requestedSkill", select: "title description" },
-    { path: "counterOffer.offeredSkill", select: "title description category level" },
+    {
+      path: "counterOffer.offeredSkill",
+      select: "title description category level",
+    },
   ]);
 
   return barter;
