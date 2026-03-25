@@ -225,3 +225,66 @@ export const deleteUserAvatar = async (userId) => {
     user: user.toPublicProfile(),
   };
 };
+
+/**
+ * Update user status (Admin)
+ * @param {String} userId - User ID
+ * @param {Boolean} isActive - Active status
+ * @returns {Object} Updated user
+ */
+export const updateUserStatus = async (userId, isActive) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  user.isActive = isActive;
+  await user.save();
+
+  return {
+    user: user.toPublicProfile(),
+  };
+};
+
+/**
+ * Get all users (Admin)
+ * @param {Object} options - Pagination and filter options
+ * @returns {Object} Users list with pagination
+ */
+export const getAllUsers = async (options = {}) => {
+  const { page = 1, limit = 10, search } = options;
+  const skip = (page - 1) * limit;
+
+  const query = {};
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { email: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  const [users, total] = await Promise.all([
+    User.find(query)
+      .select(
+        "-password -verificationOTP -verificationOTPExpire -resetPasswordToken -resetPasswordExpire",
+      )
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    User.countDocuments(query),
+  ]);
+
+  return {
+    users,
+    pagination: {
+      total,
+      page: Number(page),
+      limit: Number(limit),
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: page * limit < total,
+      hasPrevPage: page > 1,
+    },
+  };
+};
+

@@ -1,11 +1,7 @@
 import * as notificationService from "../services/notification.service.js";
 import { successResponse, errorResponse } from "../utils/apiResponse.utils.js";
 
-/**
- * Get current user's notifications
- * @route GET /api/notifications
- * @access Private
- */
+
 export const getMyNotifications = async (req, res) => {
   try {
     const result = await notificationService.getUserNotifications(
@@ -23,11 +19,7 @@ export const getMyNotifications = async (req, res) => {
   }
 };
 
-/**
- * Mark a specific notification as read
- * @route PUT /api/notifications/:id/read
- * @access Private
- */
+
 export const markRead = async (req, res) => {
   try {
     const notification = await notificationService.markAsRead(
@@ -45,11 +37,7 @@ export const markRead = async (req, res) => {
   }
 };
 
-/**
- * Mark all current user's notifications as read
- * @route PUT /api/notifications/read-all
- * @access Private
- */
+
 export const markAllRead = async (req, res) => {
   try {
     await notificationService.markAllAsRead(req.user.id);

@@ -24,6 +24,7 @@ import bookmarkRoutes from "./routes/bookmark.routes.js";
 import reportRoutes from "./routes/report.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 
 // Import middlewares
 import {
@@ -103,6 +104,7 @@ app.use("/api/bookmarks", bookmarkRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/admin", adminRoutes);
 
 // ============ ERROR HANDLING ============
 

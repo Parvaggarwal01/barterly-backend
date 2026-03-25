@@ -1,10 +1,7 @@
 import * as reviewService from "../services/review.service.js";
 import { successResponse } from "../utils/apiResponse.utils.js";
 
-/**
- * Create a review for a completed barter
- * POST /api/reviews
- */
+
 export const createReview = async (req, res, next) => {
   try {
     const review = await reviewService.createReview(req.body, req.user._id);
@@ -15,10 +12,7 @@ export const createReview = async (req, res, next) => {
   }
 };
 
-/**
- * Get all reviews for a specific user (public)
- * GET /api/reviews/user/:userId
- */
+
 export const getUserReviews = async (req, res, next) => {
   try {
     const options = {
@@ -37,10 +31,7 @@ export const getUserReviews = async (req, res, next) => {
   }
 };
 
-/**
- * Check if current user has reviewed a specific barter
- * GET /api/reviews/check/:barterId
- */
+
 export const checkReviewStatus = async (req, res, next) => {
   try {
     const result = await reviewService.checkReviewStatus(
@@ -54,10 +45,7 @@ export const checkReviewStatus = async (req, res, next) => {
   }
 };
 
-/**
- * Get reviews written by the current user
- * GET /api/reviews/my
- */
+
 export const getMyReviews = async (req, res, next) => {
   try {
     const options = {

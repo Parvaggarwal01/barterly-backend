@@ -1,22 +1,18 @@
 import * as authService from "../services/auth.service.js";
 import { successResponse, errorResponse } from "../utils/apiResponse.utils.js";
 
-/**
- * Register new user
- * POST /api/auth/register
- */
+
 export const register = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
     const result = await authService.registerUser({ name, email, password });
 
-    // Set refresh token in httpOnly cookie
     res.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     return successResponse(
@@ -33,22 +29,18 @@ export const register = async (req, res, next) => {
   }
 };
 
-/**
- * Login user
- * POST /api/auth/login
- */
+
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
     const result = await authService.loginUser(email, password);
 
-    // Set refresh token in httpOnly cookie
     res.cookie("refreshToken", result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     return successResponse(res, 200, "Login successful", {
@@ -60,10 +52,6 @@ export const login = async (req, res, next) => {
   }
 };
 
-/**
- * Verify email with OTP
- * POST /api/auth/verify-email
- */
 export const verifyEmail = async (req, res, next) => {
   try {
     const { otp, email } = req.body;
@@ -76,10 +64,7 @@ export const verifyEmail = async (req, res, next) => {
   }
 };
 
-/**
- * Resend verification email
- * POST /api/auth/resend-verification
- */
+
 export const resendVerification = async (req, res, next) => {
   try {
     const userId = req.user._id;
@@ -92,10 +77,7 @@ export const resendVerification = async (req, res, next) => {
   }
 };
 
-/**
- * Forgot password
- * POST /api/auth/forgot-password
- */
+
 export const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -108,10 +90,7 @@ export const forgotPassword = async (req, res, next) => {
   }
 };
 
-/**
- * Reset password
- * POST /api/auth/reset-password/:token
- */
+
 export const resetPassword = async (req, res, next) => {
   try {
     const { token } = req.params;
@@ -125,17 +104,13 @@ export const resetPassword = async (req, res, next) => {
   }
 };
 
-/**
- * Refresh access token
- * POST /api/auth/refresh-token
- */
+
 export const refreshToken = async (req, res, next) => {
   try {
     const refreshToken = req.cookies.refreshToken;
 
     const tokens = await authService.refreshAccessToken(refreshToken);
 
-    // Update refresh token cookie
     res.cookie("refreshToken", tokens.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -151,10 +126,7 @@ export const refreshToken = async (req, res, next) => {
   }
 };
 
-/**
- * Logout user
- * POST /api/auth/logout
- */
+
 export const logout = async (req, res, next) => {
   try {
     await authService.logoutUser();
@@ -168,10 +140,7 @@ export const logout = async (req, res, next) => {
   }
 };
 
-/**
- * Get current user
- * GET /api/auth/me
- */
+
 export const getCurrentUser = async (req, res, next) => {
   try {
     const userId = req.user._id;

@@ -1,10 +1,7 @@
 import * as skillService from "../services/skill.service.js";
 import { successResponse } from "../utils/apiResponse.utils.js";
 
-/**
- * Create a new skill
- * POST /api/skills
- */
+
 export const createSkill = async (req, res, next) => {
   try {
     const skill = await skillService.createSkill(req.body, req.user._id);
@@ -15,10 +12,7 @@ export const createSkill = async (req, res, next) => {
   }
 };
 
-/**
- * Get all skills with filters
- * GET /api/skills
- */
+
 export const getAllSkills = async (req, res, next) => {
   try {
     const filters = {
@@ -43,10 +37,7 @@ export const getAllSkills = async (req, res, next) => {
   }
 };
 
-/**
- * Get skill by ID
- * GET /api/skills/:id
- */
+
 export const getSkillById = async (req, res, next) => {
   try {
     const skill = await skillService.getSkillById(req.params.id);
@@ -57,10 +48,7 @@ export const getSkillById = async (req, res, next) => {
   }
 };
 
-/**
- * Update skill
- * PUT /api/skills/:id
- */
+
 export const updateSkill = async (req, res, next) => {
   try {
     const skill = await skillService.updateSkill(
@@ -75,10 +63,7 @@ export const updateSkill = async (req, res, next) => {
   }
 };
 
-/**
- * Delete skill
- * DELETE /api/skills/:id
- */
+
 export const deleteSkill = async (req, res, next) => {
   try {
     const result = await skillService.deleteSkill(
@@ -92,10 +77,7 @@ export const deleteSkill = async (req, res, next) => {
   }
 };
 
-/**
- * Get current user's skills
- * GET /api/skills/my/list
- */
+
 export const getMySkills = async (req, res, next) => {
   try {
     const skills = await skillService.getUserSkills(req.user._id);
@@ -111,10 +93,7 @@ export const getMySkills = async (req, res, next) => {
   }
 };
 
-/**
- * Get user skills by user ID
- * GET /api/skills/user/:userId
- */
+
 export const getUserSkills = async (req, res, next) => {
   try {
     const skills = await skillService.getUserSkills(req.params.userId);
@@ -127,10 +106,7 @@ export const getUserSkills = async (req, res, next) => {
   }
 };
 
-/**
- * Admin: Get all skills including pending
- * GET /api/skills/admin/all
- */
+
 export const getAllSkillsAdmin = async (req, res, next) => {
   try {
     const filters = {
@@ -149,16 +125,14 @@ export const getAllSkillsAdmin = async (req, res, next) => {
 
     const result = await skillService.getAllSkillsAdmin(filters, options);
 
+
     return successResponse(res, 200, "Skills retrieved successfully", result);
   } catch (error) {
     next(error);
   }
 };
 
-/**
- * Admin: Update skill verification status
- * PATCH /api/skills/:id/verify
- */
+
 export const updateSkillVerification = async (req, res, next) => {
   try {
     const { status, note } = req.body;
@@ -180,10 +154,7 @@ export const updateSkillVerification = async (req, res, next) => {
   }
 };
 
-/**
- * Admin: Get skill statistics
- * GET /api/skills/admin/stats
- */
+
 export const getSkillStats = async (req, res, next) => {
   try {
     const stats = await skillService.getSkillStats();

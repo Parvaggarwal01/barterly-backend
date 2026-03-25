@@ -2,9 +2,7 @@ import { verifyAccessToken } from "../utils/jwt.utils.js";
 import { errorResponse } from "../utils/apiResponse.utils.js";
 import User from "../models/User.model.js";
 
-/**
- * Middleware to verify JWT access token and authenticate user
- */
+
 export const authenticate = async (req, res, next) => {
   // console.log("🔐 Authenticate middleware started");
   // console.log("🔐 next is a function?", typeof next === "function");
@@ -100,8 +98,6 @@ export const optionalAuthenticate = async (req, res, next) => {
         req.user = user;
       }
     } catch (error) {
-      // Token invalid, but we don't fail - just continue without user
-      // console.log("Optional auth - invalid token, continuing without user");
     }
 
     next();

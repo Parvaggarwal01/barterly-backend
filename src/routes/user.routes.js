@@ -7,6 +7,7 @@ import {
   uploadAvatarSchema,
   getUserByIdSchema,
 } from "../validations/user.validation.js";
+import { authorize } from "../middlewares/role.middleware.js";
 
 const router = express.Router();
 
@@ -17,6 +18,23 @@ const router = express.Router();
 
 // Get current user's profile
 router.get("/me", authenticate, userController.getCurrentUserProfile);
+
+/**
+ * Admin routes
+ */
+router.get(
+  "/admin/all",
+  authenticate,
+  authorize("admin"),
+  userController.getAllUsers,
+);
+
+router.patch(
+  "/admin/:id/status",
+  authenticate,
+  authorize("admin"),
+  userController.updateUserStatus,
+);
 
 /**
  * Public routes

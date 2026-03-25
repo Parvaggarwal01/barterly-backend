@@ -1,10 +1,7 @@
 import * as barterService from "../services/barter.service.js";
 import { successResponse } from "../utils/apiResponse.utils.js";
 
-/**
- * Create a new barter request
- * POST /api/barters
- */
+
 export const createBarterRequest = async (req, res, next) => {
   console.log("🎯 Controller reached");
   console.log("🎯 next is a function?", typeof next === "function");
@@ -26,10 +23,7 @@ export const createBarterRequest = async (req, res, next) => {
   }
 };
 
-/**
- * Get user's barter requests with filters
- * GET /api/barters/my
- */
+
 export const getMyBarters = async (req, res, next) => {
   try {
     const filters = {
@@ -61,10 +55,7 @@ export const getMyBarters = async (req, res, next) => {
   }
 };
 
-/**
- * Get single barter request by ID
- * GET /api/barters/:id
- */
+
 export const getBarterById = async (req, res, next) => {
   try {
     const barter = await barterService.getBarterById(
@@ -83,10 +74,7 @@ export const getBarterById = async (req, res, next) => {
   }
 };
 
-/**
- * Accept a barter request
- * PUT /api/barters/:id/accept
- */
+
 export const acceptBarter = async (req, res, next) => {
   try {
     const barter = await barterService.acceptBarter(
@@ -100,10 +88,7 @@ export const acceptBarter = async (req, res, next) => {
   }
 };
 
-/**
- * Reject a barter request
- * PUT /api/barters/:id/reject
- */
+
 export const rejectBarter = async (req, res, next) => {
   try {
     const barter = await barterService.rejectBarter(
@@ -118,10 +103,7 @@ export const rejectBarter = async (req, res, next) => {
   }
 };
 
-/**
- * Counter offer on a barter request
- * PUT /api/barters/:id/counter
- */
+
 export const counterOffer = async (req, res, next) => {
   try {
     const barter = await barterService.counterOffer(
@@ -136,10 +118,7 @@ export const counterOffer = async (req, res, next) => {
   }
 };
 
-/**
- * Cancel a barter request
- * PUT /api/barters/:id/cancel
- */
+
 export const cancelBarter = async (req, res, next) => {
   try {
     const barter = await barterService.cancelBarter(
@@ -153,10 +132,7 @@ export const cancelBarter = async (req, res, next) => {
   }
 };
 
-/**
- * Mark barter as completed
- * PUT /api/barters/:id/complete
- */
+
 export const completeBarter = async (req, res, next) => {
   try {
     const barter = await barterService.completeBarter(
@@ -175,10 +151,7 @@ export const completeBarter = async (req, res, next) => {
   }
 };
 
-/**
- * Get barter statistics for current user
- * GET /api/barters/stats
- */
+
 export const getBarterStats = async (req, res, next) => {
   try {
     const stats = await barterService.getBarterStats(req.user._id);

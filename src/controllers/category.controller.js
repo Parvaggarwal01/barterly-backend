@@ -1,10 +1,7 @@
 import * as categoryService from "../services/category.service.js";
 import { successResponse } from "../utils/apiResponse.utils.js";
 
-/**
- * Create a new category
- * POST /api/categories
- */
+
 export const createCategory = async (req, res, next) => {
   try {
     const category = await categoryService.createCategory(req.body);
@@ -20,10 +17,7 @@ export const createCategory = async (req, res, next) => {
   }
 };
 
-/**
- * Get all categories
- * GET /api/categories
- */
+
 export const getAllCategories = async (req, res, next) => {
   try {
     const filters = {
@@ -43,10 +37,7 @@ export const getAllCategories = async (req, res, next) => {
   }
 };
 
-/**
- * Get category by ID
- * GET /api/categories/:id
- */
+
 export const getCategoryById = async (req, res, next) => {
   try {
     const category = await categoryService.getCategoryById(req.params.id);
@@ -62,10 +53,7 @@ export const getCategoryById = async (req, res, next) => {
   }
 };
 
-/**
- * Get category by slug
- * GET /api/categories/slug/:slug
- */
+
 export const getCategoryBySlug = async (req, res, next) => {
   try {
     const category = await categoryService.getCategoryBySlug(req.params.slug);
@@ -81,10 +69,7 @@ export const getCategoryBySlug = async (req, res, next) => {
   }
 };
 
-/**
- * Update category
- * PUT /api/categories/:id
- */
+
 export const updateCategory = async (req, res, next) => {
   try {
     const category = await categoryService.updateCategory(
@@ -103,10 +88,7 @@ export const updateCategory = async (req, res, next) => {
   }
 };
 
-/**
- * Delete category
- * DELETE /api/categories/:id
- */
+
 export const deleteCategory = async (req, res, next) => {
   try {
     const result = await categoryService.deleteCategory(req.params.id);
@@ -117,10 +99,7 @@ export const deleteCategory = async (req, res, next) => {
   }
 };
 
-/**
- * Toggle category status
- * PATCH /api/categories/:id/toggle-status
- */
+
 export const toggleCategoryStatus = async (req, res, next) => {
   try {
     const category = await categoryService.toggleCategoryStatus(req.params.id);
@@ -136,10 +115,7 @@ export const toggleCategoryStatus = async (req, res, next) => {
   }
 };
 
-/**
- * Get category statistics
- * GET /api/categories/admin/stats
- */
+
 export const getCategoryStats = async (req, res, next) => {
   try {
     const stats = await categoryService.getCategoryStats();

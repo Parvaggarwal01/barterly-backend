@@ -1,11 +1,7 @@
 import * as chatService from "../services/chat.service.js";
 import { successResponse, errorResponse } from "../utils/apiResponse.utils.js";
 
-/**
- * Get current user's available conversations
- * @route GET /api/chat/conversations
- * @access Private
- */
+
 export const getMyConversations = async (req, res) => {
   try {
     const result = await chatService.getUserConversations(req.user.id);
@@ -15,11 +11,7 @@ export const getMyConversations = async (req, res) => {
   }
 };
 
-/**
- * Create or get conversation with a specific user
- * @route POST /api/chat/conversations
- * @access Private
- */
+
 export const createConversation = async (req, res) => {
   try {
     const { participantId, barterId } = req.body;
@@ -33,11 +25,7 @@ export const createConversation = async (req, res) => {
   }
 };
 
-/**
- * Get conversation messages by ID
- * @route GET /api/chat/conversations/:id
- * @access Private
- */
+
 export const getConversationById = async (req, res) => {
   try {
     const result = await chatService.getMessages(req.params.id, req.user.id);
@@ -47,17 +35,13 @@ export const getConversationById = async (req, res) => {
   }
 };
 
-/**
- * Send message to conversation
- * @route POST /api/chat/conversations/:id/messages
- * @access Private
- */
+
 export const sendMessage = async (req, res) => {
   try {
     const result = await chatService.sendMessage(
-        req.params.id, 
-        req.user.id, 
-        req.body.content, 
+        req.params.id,
+        req.user.id,
+        req.body.content,
         req.body.type || "text"
     );
     return successResponse(res, 201, "Message sent successfully", result);

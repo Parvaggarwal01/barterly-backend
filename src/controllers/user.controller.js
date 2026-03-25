@@ -1,10 +1,6 @@
 import * as userService from "../services/user.service.js";
 import { successResponse } from "../utils/apiResponse.utils.js";
 
-/**
- * Get user profile by ID
- * GET /api/users/:id
- */
 export const getUserProfile = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -22,10 +18,6 @@ export const getUserProfile = async (req, res, next) => {
   }
 };
 
-/**
- * Update current user's profile
- * PUT /api/users/profile
- */
 export const updateProfile = async (req, res, next) => {
   try {
     const userId = req.user._id;
@@ -39,10 +31,6 @@ export const updateProfile = async (req, res, next) => {
   }
 };
 
-/**
- * Upload/update user avatar
- * PUT /api/users/avatar
- */
 export const uploadAvatar = async (req, res, next) => {
   try {
     const userId = req.user._id;
@@ -56,10 +44,6 @@ export const uploadAvatar = async (req, res, next) => {
   }
 };
 
-/**
- * Delete user avatar
- * DELETE /api/users/avatar
- */
 export const deleteAvatar = async (req, res, next) => {
   try {
     const userId = req.user._id;
@@ -72,10 +56,6 @@ export const deleteAvatar = async (req, res, next) => {
   }
 };
 
-/**
- * Get user's reviews
- * GET /api/users/:id/reviews
- */
 export const getUserReviews = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -94,10 +74,6 @@ export const getUserReviews = async (req, res, next) => {
   }
 };
 
-/**
- * Get user's skills
- * GET /api/users/:id/skills
- */
 export const getUserSkills = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -116,10 +92,6 @@ export const getUserSkills = async (req, res, next) => {
   }
 };
 
-/**
- * Get current user's profile
- * GET /api/users/me
- */
 export const getCurrentUserProfile = async (req, res, next) => {
   try {
     const userId = req.user._id;
@@ -132,6 +104,37 @@ export const getCurrentUserProfile = async (req, res, next) => {
       "Current user profile retrieved successfully",
       result,
     );
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateUserStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { isActive } = req.body;
+
+    const result = await userService.updateUserStatus(id, isActive);
+
+    return successResponse(
+      res,
+      200,
+      "User status updated successfully",
+      result,
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllUsers = async (req, res, next) => {
+  try {
+    const { page, limit, search } = req.query;
+
+    const result = await userService.getAllUsers({ page, limit, search });
+
+
+    return successResponse(res, 200, "Users retrieved successfully", result);
   } catch (error) {
     next(error);
   }
