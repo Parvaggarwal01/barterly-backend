@@ -31,10 +31,7 @@ export const createReview = async (reviewData, reviewerId) => {
   const isReceiver = barter.receiver.toString() === reviewerId.toString();
 
   if (!isSender && !isReceiver) {
-    throw new AppError(
-      "You are not a participant in this barter request",
-      403,
-    );
+    throw new AppError("You are not a participant in this barter request", 403);
   }
 
   // The reviewee is the other party
@@ -190,4 +187,23 @@ export const getMyReviews = async (reviewerId, options = {}) => {
       hasPrevPage: parseInt(page) > 1,
     },
   };
+};
+
+/**
+ * Get all recent reviews (Public)
+ * @param {Object} options - Pagination options
+ * @returns {Array} Reviews
+ */
+export const getAllReviews = async (options = {}) => {
+  const { page = 1, limit = 3 } = options;
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+
+  const reviews = await Review.find()
+    .sort({ rating: -1, createdAt: -1 })
+    .skip(skip)
+    .limit(parseInt(limit))
+    .populate("reviewer", "name avatar location")
+    .populate("reviewee", "name avatar");
+
+  return reviews;
 };

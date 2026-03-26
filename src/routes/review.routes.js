@@ -10,6 +10,13 @@ import {
 const router = express.Router();
 
 /**
+ * @route   GET /api/reviews
+ * @desc    Get all recent reviews (public)
+ * @access  Public
+ */
+router.get("/", reviewController.getAllReviews);
+
+/**
  * @route   POST /api/reviews
  * @desc    Submit a review for a completed barter
  * @access  Private
@@ -33,7 +40,11 @@ router.get("/my", authenticate, reviewController.getMyReviews);
  * @desc    Check if current user has reviewed a specific barter
  * @access  Private
  */
-router.get("/check/:barterId", authenticate, reviewController.checkReviewStatus);
+router.get(
+  "/check/:barterId",
+  authenticate,
+  reviewController.checkReviewStatus,
+);
 
 /**
  * @route   GET /api/reviews/user/:userId
