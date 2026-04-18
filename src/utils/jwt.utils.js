@@ -1,9 +1,11 @@
 import jwt from "jsonwebtoken";
-import {v4 as uuidv4} from 'uuid';
-import redis from '../config/redis.js'
+import { v4 as uuidv4 } from "uuid";
+import redis from "../config/redis.js";
 
-const ACCESS_EXPIRES_IN = process.env.JWT_ACCESS_EXPIRE || process.env.JWT_ACCESS_EXPIRES_IN || "15m";
-const REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRE || process.env.JWT_REFRESH_EXPIRES_IN || "7d";
+const ACCESS_EXPIRES_IN =
+  process.env.JWT_ACCESS_EXPIRE || process.env.JWT_ACCESS_EXPIRES_IN || "15m";
+const REFRESH_EXPIRES_IN =
+  process.env.JWT_REFRESH_EXPIRE || process.env.JWT_REFRESH_EXPIRES_IN || "7d";
 
 /**
  * Generate access token (short-lived)
@@ -12,10 +14,10 @@ const REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRE || process.env.JWT_REF
  */
 export const generateAccessToken = (payload) => {
   return jwt.sign(
-    {...payload, jti: uuidv4() },
+    { ...payload, jti: uuidv4() },
     process.env.JWT_ACCESS_SECRET,
-    { expiresIn: ACCESS_EXPIRES_IN }
-  )
+    { expiresIn: ACCESS_EXPIRES_IN },
+  );
 };
 
 /**
@@ -27,8 +29,8 @@ export const generateRefreshToken = (payload) => {
   return jwt.sign(
     { ...payload, jti: uuidv4() },
     process.env.JWT_REFRESH_SECRET,
-    { expiresIn: REFRESH_EXPIRES_IN }
-  )
+    { expiresIn: REFRESH_EXPIRES_IN },
+  );
 };
 
 /**
@@ -75,13 +77,11 @@ export const generateTokens = (user) => {
   };
 };
 
-
-export const blacklistToken = async(jti, expiresInSeconds) => {
+export const blacklistToken = async (jti, expiresInSeconds) => {
   await redis.setex(`blacklist:${jti}`, expiresInSeconds, "1");
 };
 
-
-export const isTokenBlacklisted = async(jti) => {
+export const isTokenBlacklisted = async (jti) => {
   const result = await redis.get(`blacklist:${jti}`);
   return result !== null;
-}
+};
