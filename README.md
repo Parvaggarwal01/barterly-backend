@@ -1,6 +1,6 @@
 # Barterly Backend - Authentication Module
 
-Backend API for the Barterly skill bartering platform. Currently implements the authentication system.
+Backend API for the Barterly skill bartering platform. It supports secure user authentication, user profiles, skill and barter workflows, real-time chat via Socket.io, caching with Redis, background job processing with RabbitMQ, and monitoring with Prometheus and Grafana. The backend is designed to keep skill exchange fast, reliable, and observable while supporting the platform’s marketplace and moderation features.
 
 ## 🎯 Current Status
 
@@ -22,6 +22,9 @@ Backend API for the Barterly skill bartering platform. Currently implements the 
 - **Password Hashing**: bcrypt
 - **Validation**: Zod
 - **Email**: Nodemailer
+- **Caching**: Redis
+- **Message Queue**: RabbitMQ
+- **Monitoring**: Prometheus + Grafana
 - **Security**: helmet, cors, custom NoSQL sanitization, hpp, express-rate-limit
 
 ## 📁 Project Structure
@@ -106,6 +109,53 @@ npm start
 ```
 
 Server will run on `http://localhost:5000`
+
+## ☁️ Managed Services Setup (Upstash + CloudAMQP + Grafana Cloud)
+
+### 1. Upstash Redis
+
+1. Create a Redis database in Upstash.
+2. Copy the Redis connection string (`rediss://...`).
+3. Set `REDIS_URL` in your backend environment variables.
+
+### 2. CloudAMQP RabbitMQ
+
+1. Create a free RabbitMQ instance in CloudAMQP.
+2. Copy the AMQP URL (`amqps://...`).
+3. Set `CLOUDAMQP_URL` in your backend environment variables.
+
+### 3. Grafana Cloud (Prometheus metrics)
+
+Barterly already exposes metrics at `GET /metrics`.
+
+1. Create a Grafana Cloud account and open your Prometheus stack.
+2. Add a Prometheus scrape job (Grafana Alloy/Agent or compatible scraper) to collect metrics from your deployed backend endpoint:
+
+```yaml
+scrape_configs:
+  - job_name: barterly-backend
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - your-backend-domain.com
+```
+
+3. In Grafana Cloud, confirm incoming series such as:
+   - `barterly_http_request_total`
+   - `barterly_http_request_duration_seconds`
+   - `barterly_registered_users_total`
+   - `barterly_email_queue_size`
+
+### 4. Recommended Production Env Vars
+
+Use values from `.env.example` and ensure these are set on your host (Render/Railway/Fly.io/etc.):
+
+- `MONGODB_URI`
+- `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`
+- `REDIS_URL`
+- `CLOUDAMQP_URL`
+- `SMTP_USER`, `SMTP_PASS`
+- `FRONTEND_URL`
 
 ## 📡 API Endpoints
 

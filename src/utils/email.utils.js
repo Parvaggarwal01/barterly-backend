@@ -188,14 +188,13 @@ export const sendVerificationEmail = async (email, name, otp) => {
 };
 
 /**
- * Send password reset email
+ * Send password reset email with OTP
  * @param {String} email - Recipient email
  * @param {String} name - Recipient name
- * @param {String} token - Reset token
+ * @param {String} otp - 6-digit OTP code
  */
-export const sendPasswordResetEmail = async (email, name, token) => {
+export const sendPasswordResetEmail = async (email, name, otp) => {
   const transporter = createTransporter();
-  const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
   const mailOptions = {
     from: process.env.FROM_EMAIL || "noreply@barterly.com",
@@ -245,33 +244,32 @@ export const sendPasswordResetEmail = async (email, name, token) => {
             font-size: 16px;
             line-height: 1.6;
           }
-          .button-container {
+          .otp-box {
+            background: white;
+            border: 4px solid #181710;
+            box-shadow: 4px 4px 0px 0px #181710;
+            padding: 30px;
             text-align: center;
             margin: 30px 0;
           }
-          .button {
-            display: inline-block;
-            padding: 16px 40px;
-            background: #ffde5c;
-            color: #181710;
-            text-decoration: none;
-            border: 3px solid #181710;
-            box-shadow: 4px 4px 0px 0px #181710;
-            font-weight: 800;
-            font-size: 16px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: all 0.1s;
-          }
-          .link-box {
-            background: white;
-            border: 3px solid #181710;
-            padding: 15px;
-            word-break: break-all;
-            font-size: 13px;
-            color: #f472b6;
+          .otp-label {
+            font-size: 12px;
             font-weight: 700;
-            margin: 20px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #666;
+            margin-bottom: 15px;
+          }
+          .otp-code {
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: 12px;
+            color: #181710;
+            font-family: 'Plus Jakarta Sans', monospace;
+            background: #f472b6;
+            padding: 20px;
+            border: 3px solid #181710;
+            display: inline-block;
           }
           .warning {
             background: #fff3cd;
@@ -318,15 +316,14 @@ export const sendPasswordResetEmail = async (email, name, token) => {
           </div>
           <div class="content">
             <p><strong>Hi ${name},</strong></p>
-            <p>We received a request to reset your password for your <strong>Barterly</strong> account.</p>
-            <div class="button-container">
-              <a href="${resetUrl}" class="button">Reset Password</a>
+            <p>We received a request to reset your password for your <strong>Barterly</strong> account. Use the OTP code below to reset your password:</p>
+            <div class="otp-box">
+              <div class="otp-label">Your Reset Code</div>
+              <div class="otp-code">${otp}</div>
             </div>
-            <p style="text-align: center; font-size: 14px; color: #666;">Or copy and paste this link in your browser:</p>
-            <div class="link-box">${resetUrl}</div>
             <div class="warning">
               <strong>⚠️ Security Notice</strong>
-              <p>This link will expire in <strong>1 hour</strong>. If you didn't request a password reset, please ignore this email and ensure your account is secure.</p>
+              <p>This OTP will expire in <strong>10 minutes</strong>. If you didn't request a password reset, please ignore this email and ensure your account is secure.</p>
             </div>
             <div class="signature">
               <p><strong>The Barterly Team</strong></p>
@@ -343,7 +340,7 @@ export const sendPasswordResetEmail = async (email, name, token) => {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Password reset email sent to ${email}`);
+    console.log(`Password reset OTP sent to ${email}`);
   } catch (error) {
     console.error("Error sending password reset email:", error);
     throw new Error("Failed to send password reset email");

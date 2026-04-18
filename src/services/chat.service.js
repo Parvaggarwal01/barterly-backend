@@ -1,6 +1,7 @@
 import Conversation from "../models/Conversation.model.js";
 import Message from "../models/Message.model.js";
 import { getIO } from "../config/socket.js";
+import { AppError } from "../utils/apiResponse.utils.js";
 
 /**
  * Retrieve all active conversations for a user
@@ -15,7 +16,8 @@ export const getUserConversations = async (userId) => {
 
     return conversations;
   } catch (error) {
-    throw new Error(`Error fetching conversations: ${error.message}`);
+    console.error("Error fetching conversations:", error);
+    throw new AppError("Unable to fetch conversations. Please try again.", 500);
   }
 };
 
@@ -44,7 +46,8 @@ export const getOrCreateConversation = async (userId, participantId, barterId) =
       .populate("participants", "name avatar isActive");
 
   } catch (error) {
-    throw new Error(`Error getting/creating conversation: ${error.message}`);
+    console.error("Error getting/creating conversation:", error);
+    throw new AppError("Unable to start conversation. Please try again.", 500);
   }
 };
 
@@ -56,11 +59,11 @@ export const getMessages = async (conversationId, userId) => {
     const conversation = await Conversation.findById(conversationId);
     
     if (!conversation) {
-        throw new Error("Conversation not found");
+      throw new AppError("Conversation not found", 404);
     }
 
     if (!conversation.participants.includes(userId)) {
-      throw new Error("You are not part of this conversation");
+      throw new AppError("You are not part of this conversation", 403);
     }
 
     const messages = await Message.find({ conversation: conversationId })
@@ -69,7 +72,9 @@ export const getMessages = async (conversationId, userId) => {
 
     return messages;
   } catch (error) {
-    throw new Error(`Error fetching messages: ${error.message}`);
+    if (error.isOperational) throw error;
+    console.error("Error fetching messages:", error);
+    throw new AppError("Unable to fetch messages. Please try again.", 500);
   }
 };
 
@@ -81,11 +86,11 @@ export const sendMessage = async (conversationId, senderId, content, type = "tex
     const conversation = await Conversation.findById(conversationId);
 
     if (!conversation) {
-      throw new Error("Conversation not found");
+      throw new AppError("Conversation not found", 404);
     }
 
     if (!conversation.participants.includes(senderId)) {
-       throw new Error("You are not part of this conversation");
+      throw new AppError("You are not part of this conversation", 403);
     }
 
     const newMessage = await Message.create({
@@ -108,6 +113,8 @@ export const sendMessage = async (conversationId, senderId, content, type = "tex
 
     return populatedMessage;
   } catch (error) {
-    throw new Error(`Error sending message: ${error.message}`);
+    if (error.isOperational) throw error;
+    console.error("Error sending message:", error);
+    throw new AppError("Unable to send message. Please try again.", 500);
   }
 };

@@ -75,14 +75,6 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    verificationOTP: {
-      type: String,
-      select: false,
-    },
-    verificationOTPExpire: {
-      type: Date,
-      select: false,
-    },
     resetPasswordToken: {
       type: String,
       select: false,
@@ -138,8 +130,6 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 userSchema.methods.toPublicProfile = function () {
   const user = this.toObject();
   delete user.password;
-  delete user.verificationOTP;
-  delete user.verificationOTPExpire;
   delete user.resetPasswordToken;
   delete user.resetPasswordExpire;
   delete user.__v;

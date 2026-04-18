@@ -1,4 +1,5 @@
 import Notification from "../models/Notification.model.js";
+import { AppError } from "../utils/apiResponse.utils.js";
 
 /**
  * Create a new notification
@@ -11,7 +12,8 @@ export const createNotification = async (notificationData) => {
     // TODO: Emit socket event here if needed
     return notification;
   } catch (error) {
-    throw new Error(`Error creating notification: ${error.message}`);
+    console.error("Error creating notification:", error);
+    throw new AppError("Unable to create notification. Please try again.", 500);
   }
 };
 
@@ -50,7 +52,8 @@ export const getUserNotifications = async (userId, query = {}) => {
       },
     };
   } catch (error) {
-    throw new Error(`Error fetching notifications: ${error.message}`);
+    console.error("Error fetching notifications:", error);
+    throw new AppError("Unable to fetch notifications. Please try again.", 500);
   }
 };
 
@@ -68,16 +71,16 @@ export const markAsRead = async (notificationId, userId) => {
     });
 
     if (!notification) {
-      const error = new Error("Notification not found");
-      error.statusCode = 404;
-      throw error;
+      throw new AppError("Notification not found", 404);
     }
 
     notification.isRead = true;
     await notification.save();
     return notification;
   } catch (error) {
-    throw error;
+    if (error.isOperational) throw error;
+    console.error("Error marking notification as read:", error);
+    throw new AppError("Unable to update notification. Please try again.", 500);
   }
 };
 
@@ -94,6 +97,7 @@ export const markAllAsRead = async (userId) => {
     );
     return result;
   } catch (error) {
-    throw new Error(`Error marking notifications as read: ${error.message}`);
+    console.error("Error marking all notifications as read:", error);
+    throw new AppError("Unable to update notifications. Please try again.", 500);
   }
 };

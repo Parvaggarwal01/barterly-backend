@@ -1,12 +1,12 @@
 import crypto from "crypto";
 import User from "../models/User.model.js";
 import { generateTokens } from "../utils/jwt.utils.js";
-import {
-  sendVerificationEmail,
-  sendPasswordResetEmail,
-  sendWelcomeEmail,
-} from "../utils/email.utils.js";
+import { queueEmail, EMAIL_TYPE } from "./emailQueue.service.js";
 import { AppError } from "../utils/apiResponse.utils.js";
+import redis from '../config/redis.js';
+import { blacklistToken, verifyAccessToken } from "../utils/jwt.utils.js";
+import { registeredUsers } from "../config/metrics.js";
+
 
 /**
  * Register new user
@@ -27,24 +27,18 @@ export const registerUser = async ({ name, email, password }) => {
   ).toString();
 
   // Set OTP expiry to 10 minutes from now
-  const verificationOTPExpire = new Date(Date.now() + 10 * 60 * 1000);
-
-  // Create user
   const user = await User.create({
     name,
     email,
-    password,
-    verificationOTP,
-    verificationOTPExpire,
+    password
   });
 
+  await redis.setex(`otp:${email}`, 600, verificationOTP);
+
   // Send verification email with OTP
-  try {
-    await sendVerificationEmail(email, name, verificationOTP);
-  } catch (error) {
-    console.error("Failed to send verification email:", error);
-    // Continue registration even if email fails
-  }
+  queueEmail(EMAIL_TYPE.VERIFICATION, { email, name, otp: verificationOTP });
+
+  registeredUsers.inc();
 
   // Generate tokens
   const tokens = generateTokens(user);
@@ -100,9 +94,7 @@ export const loginUser = async (email, password) => {
  * @returns {Object} User object
  */
 export const verifyEmail = async (otp, email) => {
-  const user = await User.findOne({ email }).select(
-    "+verificationOTP +verificationOTPExpire",
-  );
+  const user = await User.findOne({ email });
 
   if (!user) {
     throw new AppError("User not found", 404);
@@ -112,35 +104,20 @@ export const verifyEmail = async (otp, email) => {
     throw new AppError("Email already verified", 400);
   }
 
-  if (!user.verificationOTP || !user.verificationOTPExpire) {
-    throw new AppError(
-      "No verification OTP found. Please request a new one.",
-      400,
-    );
+  const storedOTP = await redis.get(`otp:${email}`);
+  if(!storedOTP){
+    throw new AppError("OTP expired. Please request a new one.", 400)
   }
 
-  // Check if OTP has expired
-  if (user.verificationOTPExpire < Date.now()) {
-    throw new AppError("OTP has expired. Please request a new one.", 400);
+  if(storedOTP !== otp){
+    throw new AppError("Invalid OTP code.", 400);
   }
 
-  // Check if OTP matches
-  if (user.verificationOTP !== otp) {
-    throw new AppError("Invalid OTP code", 400);
-  }
-
-  // Update user
+  await redis.del(`otp:${email}`);
   user.isVerified = true;
-  user.verificationOTP = undefined;
-  user.verificationOTPExpire = undefined;
   await user.save();
 
-  // Send welcome email
-  try {
-    await sendWelcomeEmail(user.email, user.name);
-  } catch (error) {
-    console.error("Failed to send welcome email:", error);
-  }
+  queueEmail(EMAIL_TYPE.WELCOME, { email: user.email, name: user.name });
 
   return {
     user: user.toPublicProfile(),
@@ -168,15 +145,10 @@ export const resendVerificationEmail = async (userId) => {
     100000 + Math.random() * 900000,
   ).toString();
 
-  // Set OTP expiry to 10 minutes from now
-  const verificationOTPExpire = new Date(Date.now() + 10 * 60 * 1000);
-
-  user.verificationOTP = verificationOTP;
-  user.verificationOTPExpire = verificationOTPExpire;
-  await user.save();
+  await redis.setex(`otp:${user.email}`, 600, verificationOTP);
 
   // Send verification email with new OTP
-  await sendVerificationEmail(user.email, user.name, verificationOTP);
+  queueEmail(EMAIL_TYPE.VERIFICATION, { email: user.email, name: user.name, otp: verificationOTP });
 
   return {
     message: "Verification OTP sent successfully",
@@ -184,7 +156,7 @@ export const resendVerificationEmail = async (userId) => {
 };
 
 /**
- * Request password reset
+ * Request password reset with OTP
  * @param {String} email - User email
  * @returns {Object} Success message
  */
@@ -195,67 +167,56 @@ export const forgotPassword = async (email) => {
     // Don't reveal if email exists or not for security
     return {
       message:
-        "If your email is registered, you will receive a password reset link",
+        "If your email is registered, you will receive a password reset OTP",
     };
   }
 
-  // Generate reset token
-  const resetToken = crypto.randomBytes(32).toString("hex");
-  const resetTokenHash = crypto
-    .createHash("sha256")
-    .update(resetToken)
-    .digest("hex");
+  // Generate 6-digit OTP
+  const resetOTP = Math.floor(100000 + Math.random() * 900000).toString();
 
-  // Set reset token and expiry (1 hour)
-  user.resetPasswordToken = resetTokenHash;
-  user.resetPasswordExpire = Date.now() + 60 * 60 * 1000; // 1 hour
-  await user.save();
+  // Store OTP in Redis with 10 minute expiry
+  await redis.setex(`reset-otp:${email}`, 600, resetOTP);
 
-  // Send reset email
-  try {
-    await sendPasswordResetEmail(user.email, user.name, resetToken);
-  } catch (error) {
-    // Revert changes if email fails
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
-    await user.save();
-
-    throw new AppError("Failed to send password reset email", 500);
-  }
+  // Send reset email with OTP via queue
+  await queueEmail(EMAIL_TYPE.PASSWORD_RESET, { email: user.email, name: user.name, otp: resetOTP });
 
   return {
     message:
-      "If your email is registered, you will receive a password reset link",
+      "If your email is registered, you will receive a password reset OTP",
   };
 };
 
 /**
- * Reset password
- * @param {String} token - Reset token
+ * Reset password with OTP
+ * @param {String} email - User email
+ * @param {String} otp - 6-digit OTP
  * @param {String} newPassword - New password
  * @returns {Object} Success message
  */
-export const resetPassword = async (token, newPassword) => {
-  // Hash the token to compare with stored hash
-  const resetTokenHash = crypto
-    .createHash("sha256")
-    .update(token)
-    .digest("hex");
-
-  // Find user with valid reset token
-  const user = await User.findOne({
-    resetPasswordToken: resetTokenHash,
-    resetPasswordExpire: { $gt: Date.now() },
-  }).select("+resetPasswordToken +resetPasswordExpire");
+export const resetPassword = async (email, otp, newPassword) => {
+  // Find user
+  const user = await User.findOne({ email }).select("+password");
 
   if (!user) {
-    throw new AppError("Invalid or expired reset token", 400);
+    throw new AppError("Invalid email or OTP", 400);
   }
+
+  // Verify OTP from Redis
+  const storedOTP = await redis.get(`reset-otp:${email}`);
+
+  if (!storedOTP) {
+    throw new AppError("OTP expired. Please request a new one.", 400);
+  }
+
+  if (storedOTP !== otp) {
+    throw new AppError("Invalid OTP code.", 400);
+  }
+
+  // Delete OTP from Redis
+  await redis.del(`reset-otp:${email}`);
 
   // Update password
   user.password = newPassword;
-  user.resetPasswordToken = undefined;
-  user.resetPasswordExpire = undefined;
   await user.save();
 
   return {
@@ -304,10 +265,16 @@ export const refreshAccessToken = async (refreshToken) => {
  * Logout user (invalidate refresh token)
  * @returns {Object} Success message
  */
-export const logoutUser = async () => {
-  // In a real implementation with token blacklisting or session storage,
-  // you would invalidate the refresh token here
-  // For now, we'll just return success and let the client handle clearing cookies
+export const logoutUser = async (accessToken) => {
+  if(accessToken){
+    try{
+      const decoded = verifyAccessToken(accessToken);
+      const ttlSeconds = decoded.exp - Math.floor(Date.now() / 1000);
+      if(ttlSeconds > 0){
+        await blacklistToken(decoded.jti, ttlSeconds);
+      }
+    } catch (_){}
+  }
 
   return {
     message: "Logged out successfully",

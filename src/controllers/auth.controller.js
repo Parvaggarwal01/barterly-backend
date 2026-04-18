@@ -1,6 +1,22 @@
 import * as authService from "../services/auth.service.js";
 import { successResponse, errorResponse } from "../utils/apiResponse.utils.js";
 
+const isProduction = process.env.NODE_ENV === "production";
+
+const buildRefreshCookieOptions = (maxAge) => {
+  const options = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "strict",
+    path: "/",
+  };
+
+  if (typeof maxAge === "number") {
+    options.maxAge = maxAge;
+  }
+
+  return options;
+};
 
 export const register = async (req, res, next) => {
   try {
@@ -8,12 +24,11 @@ export const register = async (req, res, next) => {
 
     const result = await authService.registerUser({ name, email, password });
 
-    res.cookie("refreshToken", result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie(
+      "refreshToken",
+      result.refreshToken,
+      buildRefreshCookieOptions(7 * 24 * 60 * 60 * 1000),
+    );
 
     return successResponse(
       res,
@@ -29,19 +44,21 @@ export const register = async (req, res, next) => {
   }
 };
 
-
 export const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
 
     const result = await authService.loginUser(email, password);
 
-    res.cookie("refreshToken", result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    // Set cookie expiry based on rememberMe
+    // If rememberMe is true: 30 days, otherwise: session cookie (no maxAge)
+    const cookieOptions = buildRefreshCookieOptions();
+
+    if (rememberMe) {
+      cookieOptions.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+    }
+
+    res.cookie("refreshToken", result.refreshToken, cookieOptions);
 
     return successResponse(res, 200, "Login successful", {
       user: result.user,
@@ -64,7 +81,6 @@ export const verifyEmail = async (req, res, next) => {
   }
 };
 
-
 export const resendVerification = async (req, res, next) => {
   try {
     const userId = req.user._id;
@@ -76,7 +92,6 @@ export const resendVerification = async (req, res, next) => {
     next(error);
   }
 };
-
 
 export const forgotPassword = async (req, res, next) => {
   try {
@@ -90,13 +105,11 @@ export const forgotPassword = async (req, res, next) => {
   }
 };
 
-
 export const resetPassword = async (req, res, next) => {
   try {
-    const { token } = req.params;
-    const { password } = req.body;
+    const { email, otp, password } = req.body;
 
-    const result = await authService.resetPassword(token, password);
+    const result = await authService.resetPassword(email, otp, password);
 
     return successResponse(res, 200, result.message);
   } catch (error) {
@@ -104,19 +117,17 @@ export const resetPassword = async (req, res, next) => {
   }
 };
 
-
 export const refreshToken = async (req, res, next) => {
   try {
     const refreshToken = req.cookies.refreshToken;
 
     const tokens = await authService.refreshAccessToken(refreshToken);
 
-    res.cookie("refreshToken", tokens.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    res.cookie(
+      "refreshToken",
+      tokens.refreshToken,
+      buildRefreshCookieOptions(7 * 24 * 60 * 60 * 1000), // 7 days
+    );
 
     return successResponse(res, 200, "Token refreshed successfully", {
       accessToken: tokens.accessToken,
@@ -126,20 +137,19 @@ export const refreshToken = async (req, res, next) => {
   }
 };
 
-
 export const logout = async (req, res, next) => {
   try {
-    await authService.logoutUser();
+    const token = req.headers.authorization?.split(" ")[1];
+    await authService.logoutUser(token);
 
     // Clear refresh token cookie
-    res.clearCookie("refreshToken");
+    res.clearCookie("refreshToken", buildRefreshCookieOptions());
 
     return successResponse(res, 200, "Logged out successfully");
   } catch (error) {
     next(error);
   }
 };
-
 
 export const getCurrentUser = async (req, res, next) => {
   try {

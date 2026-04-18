@@ -1,25 +1,29 @@
 # 🔧 Barterly — Backend Requirements
-> Use this file as context when prompting GitHub Copilot or Claude agent to build the backend.
+
+> Barterly is a full-stack MERN web application that empowers users to participate in a cashless barter economy by exchanging skills, services, or goods. The platform enables secure user profiles, skill listings, barter requests, real-time chat via Socket.io, caching with Redis, background job processing with RabbitMQ, and observability through Prometheus and Grafana. It is built to support smooth negotiations, responsive marketplace browsing, and dependable moderation at scale.
 
 ---
 
 ## 📦 Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Runtime | Node.js (v18+) |
-| Framework | Express.js |
-| Database | MongoDB + Mongoose |
-| Auth | JWT (Access + Refresh tokens) |
-| Password Hashing | bcrypt |
-| Validation | Zod |
-| File Upload | Multer + Cloudinary |
-| Real-time Chat | Socket.io |
-| Email | Nodemailer (or Resend) |
-| Rate Limiting | express-rate-limit |
-| Security | helmet, cors, mongo-sanitize, hpp |
-| Testing | Jest + Supertest |
-| Docs | Swagger (swagger-jsdoc + swagger-ui-express) |
+| Layer            | Technology                                   |
+| ---------------- | -------------------------------------------- |
+| Runtime          | Node.js (v18+)                               |
+| Framework        | Express.js                                   |
+| Database         | MongoDB + Mongoose                           |
+| Auth             | JWT (Access + Refresh tokens)                |
+| Password Hashing | bcrypt                                       |
+| Validation       | Zod                                          |
+| File Upload      | Multer + Cloudinary                          |
+| Real-time Chat   | Socket.io                                    |
+| Caching          | Redis                                        |
+| Message Queue    | RabbitMQ                                     |
+| Email            | Nodemailer (or Resend)                       |
+| Rate Limiting    | express-rate-limit                           |
+| Security         | helmet, cors, mongo-sanitize, hpp            |
+| Monitoring       | Prometheus + Grafana                         |
+| Testing          | Jest + Supertest                             |
+| Docs             | Swagger (swagger-jsdoc + swagger-ui-express) |
 
 ---
 
@@ -116,6 +120,7 @@ barterly-backend/
 ## 🗃️ Database Models (Mongoose Schemas)
 
 ### User
+
 ```js
 {
   name: String (required),
@@ -141,6 +146,7 @@ barterly-backend/
 ```
 
 ### Skill
+
 ```js
 {
   title: String (required),
@@ -167,6 +173,7 @@ barterly-backend/
 ```
 
 ### BarterRequest
+
 ```js
 {
   sender: { type: ObjectId, ref: 'User' },
@@ -186,6 +193,7 @@ barterly-backend/
 ```
 
 ### Review
+
 ```js
 {
   reviewer: { type: ObjectId, ref: 'User' },
@@ -198,6 +206,7 @@ barterly-backend/
 ```
 
 ### Message
+
 ```js
 {
   conversation: { type: ObjectId, ref: 'Conversation' },
@@ -211,6 +220,7 @@ barterly-backend/
 ```
 
 ### Conversation
+
 ```js
 {
   participants: [{ type: ObjectId, ref: 'User' }],
@@ -221,6 +231,7 @@ barterly-backend/
 ```
 
 ### Category
+
 ```js
 {
   name: String (required, unique),
@@ -233,6 +244,7 @@ barterly-backend/
 ```
 
 ### Report
+
 ```js
 {
   reporter: { type: ObjectId, ref: 'User' },
@@ -247,6 +259,7 @@ barterly-backend/
 ```
 
 ### Bookmark
+
 ```js
 {
   user: { type: ObjectId, ref: 'User' },
@@ -257,6 +270,7 @@ barterly-backend/
 ```
 
 ### Notification
+
 ```js
 {
   recipient: { type: ObjectId, ref: 'User' },
@@ -274,6 +288,7 @@ barterly-backend/
 ## 🔐 Authentication & Authorization
 
 ### Endpoints
+
 ```
 POST   /api/auth/register          # Register + send email verification
 POST   /api/auth/login             # Login → return accessToken + refreshToken
@@ -285,6 +300,7 @@ POST   /api/auth/reset-password/:token
 ```
 
 ### JWT Strategy
+
 - **Access token**: 15 minutes expiry, stored in memory (frontend)
 - **Refresh token**: 7 days expiry, stored in httpOnly cookie
 - Generate both on login
@@ -292,10 +308,11 @@ POST   /api/auth/reset-password/:token
 - Blacklist invalidated tokens or use short-lived strategy
 
 ### Middleware Usage
+
 ```js
 // Protect routes
-router.use(authMiddleware)            // verify JWT
-router.use(roleMiddleware('admin'))   // admin only
+router.use(authMiddleware); // verify JWT
+router.use(roleMiddleware("admin")); // admin only
 ```
 
 ---
@@ -303,6 +320,7 @@ router.use(roleMiddleware('admin'))   // admin only
 ## 📡 API Endpoints
 
 ### Users
+
 ```
 GET    /api/users/:id              # Public profile
 PUT    /api/users/profile          # Update own profile (auth)
@@ -312,6 +330,7 @@ GET    /api/users/:id/skills       # Get user's skills
 ```
 
 ### Skills
+
 ```
 POST   /api/skills                 # Create skill (auth)
 GET    /api/skills                 # Browse all with filters + pagination
@@ -323,6 +342,7 @@ GET    /api/skills/my              # Get my skills (auth)
 ```
 
 ### Search & Filters (on GET /api/skills)
+
 ```
 Query params:
   ?q=react                    # text search on title, description, tags
@@ -336,10 +356,12 @@ Query params:
   &sortBy=createdAt           # createdAt | averageRating | savedCount
   &order=desc
 ```
+
 - Use MongoDB text index on Skill (title, description, tags)
 - Use aggregation pipeline for rating filter (join with reviews)
 
 ### Barter Requests
+
 ```
 POST   /api/barters                   # Send barter request (auth)
 GET    /api/barters/my                # My sent + received requests (auth)
@@ -352,12 +374,14 @@ PUT    /api/barters/:id/complete      # Mark as completed (auth, both parties)
 ```
 
 ### Reviews
+
 ```
 POST   /api/reviews                   # Leave review after completed barter (auth)
 GET    /api/reviews/user/:userId      # All reviews for a user
 ```
 
 ### Chat
+
 ```
 GET    /api/chat/conversations         # My conversations (auth)
 GET    /api/chat/conversations/:id     # Single conversation + messages (auth)
@@ -365,17 +389,20 @@ POST   /api/chat/conversations/:id/messages   # Send message (auth)
 ```
 
 ### Bookmarks
+
 ```
 POST   /api/bookmarks/:skillId         # Toggle bookmark (auth)
 GET    /api/bookmarks                  # Get my bookmarks (auth)
 ```
 
 ### Reports
+
 ```
 POST   /api/reports                    # Submit report (auth)
 ```
 
 ### Notifications
+
 ```
 GET    /api/notifications              # My notifications (auth)
 PUT    /api/notifications/read-all    # Mark all read (auth)
@@ -383,6 +410,7 @@ PUT    /api/notifications/:id/read    # Mark one read (auth)
 ```
 
 ### Categories
+
 ```
 GET    /api/categories                 # All categories (public)
 POST   /api/categories                 # Create category (admin)
@@ -391,6 +419,7 @@ DELETE /api/categories/:id             # Delete category (admin)
 ```
 
 ### Admin Routes (all require auth + role: admin)
+
 ```
 GET    /api/admin/stats                # Dashboard stats
 GET    /api/admin/users                # All users with filters + pagination
@@ -417,19 +446,19 @@ GET    /api/admin/categories           # Manage categories
 
 ```js
 // Server emits
-'new_message'          // { conversationId, message }
-'new_notification'     // { notification }
-'barter_updated'       // { barterId, status }
-'user_online'          // { userId }
-'user_offline'         // { userId }
+"new_message"; // { conversationId, message }
+"new_notification"; // { notification }
+"barter_updated"; // { barterId, status }
+"user_online"; // { userId }
+"user_offline"; // { userId }
 
 // Client emits
-'join_conversation'    // { conversationId }
-'leave_conversation'   // { conversationId }
-'send_message'         // { conversationId, content }
-'typing'               // { conversationId }
-'stop_typing'          // { conversationId }
-'mark_read'            // { conversationId }
+"join_conversation"; // { conversationId }
+"leave_conversation"; // { conversationId }
+"send_message"; // { conversationId, content }
+"typing"; // { conversationId }
+"stop_typing"; // { conversationId }
+"mark_read"; // { conversationId }
 ```
 
 Socket.io auth middleware: verify JWT token passed in `auth.token` handshake option.
@@ -441,27 +470,28 @@ Socket.io auth middleware: verify JWT token passed in `auth.token` handshake opt
 ```js
 // All of these MUST be implemented
 
-import helmet from 'helmet'             // HTTP headers security
-import cors from 'cors'                 // CORS config with whitelist
-import mongoSanitize from 'express-mongo-sanitize'  // NoSQL injection
-import hpp from 'hpp'                   // HTTP param pollution
-import rateLimit from 'express-rate-limit'
+import helmet from "helmet"; // HTTP headers security
+import cors from "cors"; // CORS config with whitelist
+import mongoSanitize from "express-mongo-sanitize"; // NoSQL injection
+import hpp from "hpp"; // HTTP param pollution
+import rateLimit from "express-rate-limit";
 
 // Rate limits
-const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10 })   // Auth routes
-const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 })   // General API
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10 }); // Auth routes
+const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }); // General API
 
 // Apply on routes
-app.use('/api/auth', authLimiter)
-app.use('/api', apiLimiter)
+app.use("/api/auth", authLimiter);
+app.use("/api", apiLimiter);
 ```
 
 ### CORS Whitelist
+
 ```js
 const allowedOrigins = [
-  process.env.FRONTEND_URL,     // e.g. https://barterly.vercel.app
-  'http://localhost:5173'
-]
+  process.env.FRONTEND_URL, // e.g. https://barterly.vercel.app
+  "http://localhost:5173",
+];
 ```
 
 ---
@@ -469,9 +499,10 @@ const allowedOrigins = [
 ## 📤 File Upload (Cloudinary)
 
 ### Multer config
+
 ```js
 // Use memory storage, not disk
-storage = multer.memoryStorage()
+storage = multer.memoryStorage();
 
 // File filter: images only for avatar/docs
 // Accept: jpg, jpeg, png, pdf, doc, docx for verification docs
@@ -482,6 +513,7 @@ storage = multer.memoryStorage()
 ```
 
 ### Cloudinary folders
+
 ```
 barterly/avatars/
 barterly/skill-verification/
@@ -498,26 +530,29 @@ Every request body must be validated. Example schemas:
 z.object({
   name: z.string().min(2).max(50),
   email: z.string().email(),
-  password: z.string().min(8).regex(/^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%])/)
-})
+  password: z
+    .string()
+    .min(8)
+    .regex(/^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%])/),
+});
 
 // Create Skill
 z.object({
   title: z.string().min(3).max(100),
   description: z.string().min(20).max(1000),
-  category: z.string().refine(val => isValidObjectId(val)),
-  level: z.enum(['beginner', 'intermediate', 'advanced']),
-  deliveryMode: z.enum(['online', 'in-person', 'both']),
-  tags: z.array(z.string()).max(10).optional()
-})
+  category: z.string().refine((val) => isValidObjectId(val)),
+  level: z.enum(["beginner", "intermediate", "advanced"]),
+  deliveryMode: z.enum(["online", "in-person", "both"]),
+  tags: z.array(z.string()).max(10).optional(),
+});
 
 // Barter Request
 z.object({
-  receiverId: z.string().refine(val => isValidObjectId(val)),
-  offeredSkillId: z.string().refine(val => isValidObjectId(val)),
-  requestedSkillId: z.string().refine(val => isValidObjectId(val)),
-  message: z.string().min(10).max(500).optional()
-})
+  receiverId: z.string().refine((val) => isValidObjectId(val)),
+  offeredSkillId: z.string().refine((val) => isValidObjectId(val)),
+  requestedSkillId: z.string().refine((val) => isValidObjectId(val)),
+  message: z.string().min(10).max(500).optional(),
+});
 ```
 
 ---
@@ -525,6 +560,7 @@ z.object({
 ## 📬 Email Templates (Nodemailer / Resend)
 
 Send emails for:
+
 - Email verification on register
 - Password reset
 - Barter request received
@@ -538,12 +574,12 @@ Send emails for:
 ```js
 // utils/paginate.utils.js
 export const paginate = async (model, query, options) => {
-  const { page = 1, limit = 10 } = options
-  const skip = (page - 1) * limit
+  const { page = 1, limit = 10 } = options;
+  const skip = (page - 1) * limit;
   const [data, total] = await Promise.all([
     model.find(query).skip(skip).limit(limit),
-    model.countDocuments(query)
-  ])
+    model.countDocuments(query),
+  ]);
   return {
     data,
     pagination: {
@@ -552,10 +588,10 @@ export const paginate = async (model, query, options) => {
       limit: Number(limit),
       totalPages: Math.ceil(total / limit),
       hasNextPage: page * limit < total,
-      hasPrevPage: page > 1
-    }
-  }
-}
+      hasPrevPage: page > 1,
+    },
+  };
+};
 ```
 
 ---
@@ -632,6 +668,7 @@ docs: update API endpoint documentation
 ```
 
 **Rules:**
+
 - NO commits directly to `main`
 - Every feature branch → PR to `dev`
 - `dev` → PR to `main` at end

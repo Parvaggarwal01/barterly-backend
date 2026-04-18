@@ -9,6 +9,7 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
 } from "../validations/auth.validation.js";
+import { otpLimiter } from "../config/rateLimiter.js";
 
 const router = express.Router();
 
@@ -25,6 +26,7 @@ router.post("/login", validate(loginSchema), authController.login);
 // Verify email with OTP
 router.post(
   "/verify-email",
+  otpLimiter,
   validate(verifyEmailSchema),
   authController.verifyEmail,
 );
@@ -36,9 +38,10 @@ router.post(
   authController.forgotPassword,
 );
 
-// Reset password
+// Reset password with OTP
 router.post(
-  "/reset-password/:token",
+  "/reset-password",
+  otpLimiter,
   validate(resetPasswordSchema),
   authController.resetPassword,
 );
@@ -53,6 +56,7 @@ router.post("/refresh-token", authController.refreshToken);
 // Resend verification email
 router.post(
   "/resend-verification",
+  otpLimiter,
   authenticate,
   authController.resendVerification,
 );

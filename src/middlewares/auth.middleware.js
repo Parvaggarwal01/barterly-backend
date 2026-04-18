@@ -1,11 +1,9 @@
-import { verifyAccessToken } from "../utils/jwt.utils.js";
 import { errorResponse } from "../utils/apiResponse.utils.js";
 import User from "../models/User.model.js";
+import { verifyAccessToken, isTokenBlacklisted } from "../utils/jwt.utils.js";
 
 
 export const authenticate = async (req, res, next) => {
-  // console.log("🔐 Authenticate middleware started");
-  // console.log("🔐 next is a function?", typeof next === "function");
   try {
     // Get token from Authorization header
     const authHeader = req.headers.authorization;
@@ -28,6 +26,13 @@ export const authenticate = async (req, res, next) => {
       return errorResponse(res, 401, "Invalid or expired access token");
     }
 
+    if(decoded.jti){
+      const blacklisted = await isTokenBlacklisted(decoded.jti);
+      if(blacklisted){
+        return errorResponse(res, 401, "Token has been invalidated. Please log in again");
+      }
+    }
+
     // Check if user exists and is active
     const user = await User.findById(decoded.userId).select("-password");
 
@@ -45,10 +50,8 @@ export const authenticate = async (req, res, next) => {
 
     // Attach user to request object
     req.user = user;
-    // console.log("✅ Authentication passed, calling next()");
     next();
   } catch (error) {
-    console.error("Auth middleware error:", error);
     return errorResponse(res, 500, "Authentication failed");
   }
 };

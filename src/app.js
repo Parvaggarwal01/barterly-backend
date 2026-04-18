@@ -33,7 +33,20 @@ import {
 } from "./middlewares/errorHandler.middleware.js";
 import { mongoSanitizeMiddleware } from "./middlewares/mongoSanitize.middleware.js";
 
+//Import Rate Limiters
+import { authLimiter, apiLimiter } from "./config/rateLimiter.js";
+
+import { client } from "./config/metrics.js";
+import metricsMiddleware from "./middlewares/metrics.middleware.js";
+
 const app = express();
+
+app.use(metricsMiddleware);
+
+app.get("/metrics", async (req, res) => {
+  res.set("Content-Type", client.register.contentType);
+  res.end(await client.register.metrics());
+});
 
 // ============ SECURITY MIDDLEWARE ============
 
@@ -56,9 +69,12 @@ app.use(
 
       // In production/Azure we want to be permissive if FRONTEND_URL isn't perfectly matched during setup
       // A more robust approach checks if origin is in the allowed list, OR if it's a completely open environment variable
-      if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== "production") {
+      if (
+        allowedOrigins.includes(origin) ||
+        process.env.NODE_ENV !== "production"
+      ) {
         callback(null, true);
-      } else if (process.env.ALLOW_ALL_CORS === 'true') {
+      } else if (process.env.ALLOW_ALL_CORS === "true") {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
@@ -94,17 +110,17 @@ app.get("/health", (req, res) => {
 });
 
 // API routes
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/skills", skillRoutes);
-app.use("/api/categories", categoryRoutes);
-app.use("/api/barters", barterRoutes);
-app.use("/api/reviews", reviewRoutes);
-app.use("/api/bookmarks", bookmarkRoutes);
-app.use("/api/reports", reportRoutes);
-app.use("/api/notifications", notificationRoutes);
-app.use("/api/chat", chatRoutes);
-app.use("/api/admin", adminRoutes);
+app.use("/api/auth", authLimiter, authRoutes);
+app.use("/api/users", apiLimiter, userRoutes);
+app.use("/api/skills", apiLimiter, skillRoutes);
+app.use("/api/categories", apiLimiter, categoryRoutes);
+app.use("/api/barters", apiLimiter, barterRoutes);
+app.use("/api/reviews", apiLimiter, reviewRoutes);
+app.use("/api/bookmarks", apiLimiter, bookmarkRoutes);
+app.use("/api/reports", apiLimiter, reportRoutes);
+app.use("/api/notifications", apiLimiter, notificationRoutes);
+app.use("/api/chat", apiLimiter, chatRoutes);
+app.use("/api/admin", apiLimiter, adminRoutes);
 
 // ============ ERROR HANDLING ============
 

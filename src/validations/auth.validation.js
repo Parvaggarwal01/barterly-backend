@@ -92,18 +92,26 @@ export const forgotPasswordSchema = z.object({
 });
 
 /**
- * Reset password validation schema
+ * Reset password validation schema with OTP
  */
 export const resetPasswordSchema = z.object({
-  params: z.object({
-    token: z
-      .string({
-        required_error: "Reset token is required",
-      })
-      .min(1, "Reset token is required"),
-  }),
   body: z
     .object({
+      email: z
+        .string({
+          required_error: "Email is required",
+        })
+        .email("Please provide a valid email")
+        .toLowerCase()
+        .trim(),
+
+      otp: z
+        .string({
+          required_error: "OTP is required",
+        })
+        .length(6, "OTP must be exactly 6 digits")
+        .regex(/^\d+$/, "OTP must contain only numbers"),
+
       password: z
         .string({
           required_error: "Password is required",
