@@ -3,6 +3,34 @@ import { successResponse, errorResponse } from "../utils/apiResponse.utils.js";
 
 const isProduction = process.env.NODE_ENV === "production";
 
+const REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRE || "7d";
+const REMEMBER_ME_REFRESH_EXPIRES_IN =
+  process.env.JWT_REFRESH_REMEMBER_EXPIRE || "30d";
+const DEFAULT_REFRESH_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+const parseDurationToMs = (value, fallbackMs) => {
+  if (typeof value !== "string") {
+    return fallbackMs;
+  }
+
+  const parsed = value.trim().match(/^(\d+)\s*([smhd])$/i);
+
+  if (!parsed) {
+    return fallbackMs;
+  }
+
+  const amount = Number(parsed[1]);
+  const unit = parsed[2].toLowerCase();
+  const multipliers = {
+    s: 1000,
+    m: 60 * 1000,
+    h: 60 * 60 * 1000,
+    d: 24 * 60 * 60 * 1000,
+  };
+
+  return amount * multipliers[unit];
+};
+
 const buildRefreshCookieOptions = (maxAge) => {
   const options = {
     httpOnly: true,
@@ -27,7 +55,9 @@ export const register = async (req, res, next) => {
     res.cookie(
       "refreshToken",
       result.refreshToken,
-      buildRefreshCookieOptions(7 * 24 * 60 * 60 * 1000),
+      buildRefreshCookieOptions(
+        parseDurationToMs(REFRESH_EXPIRES_IN, DEFAULT_REFRESH_MAX_AGE_MS),
+      ),
     );
 
     return successResponse(
@@ -48,17 +78,23 @@ export const login = async (req, res, next) => {
   try {
     const { email, password, rememberMe } = req.body;
 
-    const result = await authService.loginUser(email, password);
+    const refreshExpiresIn = rememberMe
+      ? REMEMBER_ME_REFRESH_EXPIRES_IN
+      : REFRESH_EXPIRES_IN;
+    const refreshMaxAge = parseDurationToMs(
+      refreshExpiresIn,
+      DEFAULT_REFRESH_MAX_AGE_MS,
+    );
 
-    // Set cookie expiry based on rememberMe
-    // If rememberMe is true: 30 days, otherwise: session cookie (no maxAge)
-    const cookieOptions = buildRefreshCookieOptions();
+    const result = await authService.loginUser(email, password, {
+      refreshExpiresIn,
+    });
 
-    if (rememberMe) {
-      cookieOptions.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
-    }
-
-    res.cookie("refreshToken", result.refreshToken, cookieOptions);
+    res.cookie(
+      "refreshToken",
+      result.refreshToken,
+      buildRefreshCookieOptions(refreshMaxAge),
+    );
 
     return successResponse(res, 200, "Login successful", {
       user: result.user,
@@ -126,7 +162,9 @@ export const refreshToken = async (req, res, next) => {
     res.cookie(
       "refreshToken",
       tokens.refreshToken,
-      buildRefreshCookieOptions(7 * 24 * 60 * 60 * 1000), // 7 days
+      buildRefreshCookieOptions(
+        parseDurationToMs(REFRESH_EXPIRES_IN, DEFAULT_REFRESH_MAX_AGE_MS),
+      ),
     );
 
     return successResponse(res, 200, "Token refreshed successfully", {

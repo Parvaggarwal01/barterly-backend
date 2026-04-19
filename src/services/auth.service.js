@@ -3,10 +3,9 @@ import User from "../models/User.model.js";
 import { generateTokens } from "../utils/jwt.utils.js";
 import { queueEmail, EMAIL_TYPE } from "./emailQueue.service.js";
 import { AppError } from "../utils/apiResponse.utils.js";
-import redis from '../config/redis.js';
+import redis from "../config/redis.js";
 import { blacklistToken, verifyAccessToken } from "../utils/jwt.utils.js";
 import { registeredUsers } from "../config/metrics.js";
-
 
 /**
  * Register new user
@@ -30,7 +29,7 @@ export const registerUser = async ({ name, email, password }) => {
   const user = await User.create({
     name,
     email,
-    password
+    password,
   });
 
   await redis.setex(`otp:${email}`, 600, verificationOTP);
@@ -55,7 +54,7 @@ export const registerUser = async ({ name, email, password }) => {
  * @param {String} password - User password
  * @returns {Object} User object and tokens
  */
-export const loginUser = async (email, password) => {
+export const loginUser = async (email, password, options = {}) => {
   // Find user and include password field
   const user = await User.findOne({ email }).select("+password");
 
@@ -79,7 +78,9 @@ export const loginUser = async (email, password) => {
   }
 
   // Generate tokens
-  const tokens = generateTokens(user);
+  const tokens = generateTokens(user, {
+    refreshExpiresIn: options.refreshExpiresIn,
+  });
 
   return {
     user: user.toPublicProfile(),
@@ -105,11 +106,11 @@ export const verifyEmail = async (otp, email) => {
   }
 
   const storedOTP = await redis.get(`otp:${email}`);
-  if(!storedOTP){
-    throw new AppError("OTP expired. Please request a new one.", 400)
+  if (!storedOTP) {
+    throw new AppError("OTP expired. Please request a new one.", 400);
   }
 
-  if(storedOTP !== otp){
+  if (storedOTP !== otp) {
     throw new AppError("Invalid OTP code.", 400);
   }
 
@@ -148,7 +149,11 @@ export const resendVerificationEmail = async (userId) => {
   await redis.setex(`otp:${user.email}`, 600, verificationOTP);
 
   // Send verification email with new OTP
-  queueEmail(EMAIL_TYPE.VERIFICATION, { email: user.email, name: user.name, otp: verificationOTP });
+  queueEmail(EMAIL_TYPE.VERIFICATION, {
+    email: user.email,
+    name: user.name,
+    otp: verificationOTP,
+  });
 
   return {
     message: "Verification OTP sent successfully",
@@ -178,7 +183,11 @@ export const forgotPassword = async (email) => {
   await redis.setex(`reset-otp:${email}`, 600, resetOTP);
 
   // Send reset email with OTP via queue
-  await queueEmail(EMAIL_TYPE.PASSWORD_RESET, { email: user.email, name: user.name, otp: resetOTP });
+  await queueEmail(EMAIL_TYPE.PASSWORD_RESET, {
+    email: user.email,
+    name: user.name,
+    otp: resetOTP,
+  });
 
   return {
     message:
@@ -266,14 +275,14 @@ export const refreshAccessToken = async (refreshToken) => {
  * @returns {Object} Success message
  */
 export const logoutUser = async (accessToken) => {
-  if(accessToken){
-    try{
+  if (accessToken) {
+    try {
       const decoded = verifyAccessToken(accessToken);
       const ttlSeconds = decoded.exp - Math.floor(Date.now() / 1000);
-      if(ttlSeconds > 0){
+      if (ttlSeconds > 0) {
         await blacklistToken(decoded.jti, ttlSeconds);
       }
-    } catch (_){}
+    } catch (_) {}
   }
 
   return {

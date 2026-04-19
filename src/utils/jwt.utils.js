@@ -26,10 +26,14 @@ export const generateAccessToken = (payload) => {
  * @returns {String} JWT refresh token
  */
 export const generateRefreshToken = (payload) => {
+  return generateRefreshTokenWithExpiry(payload, REFRESH_EXPIRES_IN);
+};
+
+export const generateRefreshTokenWithExpiry = (payload, expiresIn) => {
   return jwt.sign(
     { ...payload, jti: uuidv4() },
     process.env.JWT_REFRESH_SECRET,
-    { expiresIn: REFRESH_EXPIRES_IN },
+    { expiresIn },
   );
 };
 
@@ -64,16 +68,18 @@ export const verifyRefreshToken = (token) => {
  * @param {Object} user - User object
  * @returns {Object} Object containing both tokens
  */
-export const generateTokens = (user) => {
+export const generateTokens = (user, options = {}) => {
   const payload = {
     userId: user._id,
     email: user.email,
     role: user.role,
   };
 
+  const refreshExpiresIn = options.refreshExpiresIn || REFRESH_EXPIRES_IN;
+
   return {
     accessToken: generateAccessToken(payload),
-    refreshToken: generateRefreshToken(payload),
+    refreshToken: generateRefreshTokenWithExpiry(payload, refreshExpiresIn),
   };
 };
 

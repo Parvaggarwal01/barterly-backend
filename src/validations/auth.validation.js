@@ -51,6 +51,8 @@ export const loginSchema = z.object({
         required_error: "Password is required",
       })
       .min(1, "Password is required"),
+
+    rememberMe: z.boolean().optional(),
   }),
 });
 
