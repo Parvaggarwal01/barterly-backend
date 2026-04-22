@@ -78,7 +78,10 @@ export const login = async (req, res, next) => {
   try {
     const { email, password, rememberMe } = req.body;
 
-    const refreshExpiresIn = rememberMe
+    const debugAuth = process.env.DEBUG_AUTH === "true";
+    const remember = !!rememberMe;
+
+    const refreshExpiresIn = remember
       ? REMEMBER_ME_REFRESH_EXPIRES_IN
       : REFRESH_EXPIRES_IN;
     const refreshMaxAge = parseDurationToMs(
@@ -86,15 +89,37 @@ export const login = async (req, res, next) => {
       DEFAULT_REFRESH_MAX_AGE_MS,
     );
 
+    if (debugAuth) {
+      const maskedEmail =
+        typeof email === "string"
+          ? email.replace(/(^.).*(@.*$)/, "$1***$2")
+          : "<missing>";
+      console.log("[auth.login] incoming", {
+        email: maskedEmail,
+        rememberMe: rememberMe,
+        rememberMeType: typeof rememberMe,
+        refreshExpiresIn,
+        refreshMaxAge,
+        nodeEnv: process.env.NODE_ENV,
+      });
+    }
+
     const result = await authService.loginUser(email, password, {
       refreshExpiresIn,
     });
 
-    res.cookie(
-      "refreshToken",
-      result.refreshToken,
-      buildRefreshCookieOptions(refreshMaxAge),
-    );
+    const cookieOptions = buildRefreshCookieOptions(remember ? refreshMaxAge : undefined);
+    res.cookie("refreshToken", result.refreshToken, cookieOptions);
+
+    if (debugAuth) {
+      const setCookie =
+        res.getHeader("Set-Cookie") || res.getHeader("set-cookie");
+      console.log("[auth.login] set-cookie", {
+        cookieOptions,
+        remember,
+        hasSetCookieHeader: !!setCookie,
+      });
+    }
 
     return successResponse(res, 200, "Login successful", {
       user: result.user,
@@ -156,16 +181,36 @@ export const resetPassword = async (req, res, next) => {
 export const refreshToken = async (req, res, next) => {
   try {
     const refreshToken = req.cookies.refreshToken;
+    const { rememberMe } = req.body || {};
 
-    const tokens = await authService.refreshAccessToken(refreshToken);
+    const debugAuth = process.env.DEBUG_AUTH === "true";
+    const remember = !!rememberMe;
 
-    res.cookie(
-      "refreshToken",
-      tokens.refreshToken,
-      buildRefreshCookieOptions(
-        parseDurationToMs(REFRESH_EXPIRES_IN, DEFAULT_REFRESH_MAX_AGE_MS),
-      ),
+    const refreshExpiresIn = remember
+      ? REMEMBER_ME_REFRESH_EXPIRES_IN
+      : REFRESH_EXPIRES_IN;
+
+    const tokens = await authService.refreshAccessToken(refreshToken, {
+      refreshExpiresIn,
+    });
+
+    const refreshMaxAge = parseDurationToMs(
+      refreshExpiresIn,
+      DEFAULT_REFRESH_MAX_AGE_MS,
     );
+
+    // RememberMe ON -> persistent cookie, OFF -> session cookie
+    const cookieOptions = buildRefreshCookieOptions(remember ? refreshMaxAge : undefined);
+    res.cookie("refreshToken", tokens.refreshToken, cookieOptions);
+
+    if (debugAuth) {
+      console.log("[auth.refreshToken]", {
+        rememberMe,
+        rememberMeType: typeof rememberMe,
+        refreshExpiresIn,
+        cookieHasMaxAge: typeof cookieOptions.maxAge === "number",
+      });
+    }
 
     return successResponse(res, 200, "Token refreshed successfully", {
       accessToken: tokens.accessToken,
