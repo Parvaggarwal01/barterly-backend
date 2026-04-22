@@ -239,7 +239,7 @@ export const resetPassword = async (email, otp, newPassword) => {
  * @param {String} refreshToken - Refresh token from cookie
  * @returns {Object} New tokens
  */
-export const refreshAccessToken = async (refreshToken) => {
+export const refreshAccessToken = async (refreshToken, options = {}) => {
   if (!refreshToken) {
     throw new AppError("Refresh token is required", 401);
   }
@@ -265,7 +265,9 @@ export const refreshAccessToken = async (refreshToken) => {
   }
 
   // Generate new tokens
-  const tokens = generateTokens(user);
+  const tokens = generateTokens(user, {
+    refreshExpiresIn: options.refreshExpiresIn,
+  });
 
   return tokens;
 };
